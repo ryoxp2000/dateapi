@@ -2,84 +2,12 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>環境情報チェッカー (JSON出力版)</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #1e1e1e;
-            color: #d4d4d4;
-            padding: 20px;
-            margin: 0;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: #252526;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-        h1 {
-            font-size: 1.5rem;
-            color: #ffffff;
-            margin-top: 0;
-            border-bottom: 1px solid #3c3c3c;
-            padding-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .status-badge {
-            font-size: 0.8rem;
-            padding: 4px 8px;
-            border-radius: 4px;
-            background: #e67e22;
-            color: #fff;
-        }
-        .status-badge.ready {
-            background: #27ae60;
-        }
-        .btn-copy {
-            background: #0e639c;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            font-size: 0.9rem;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .btn-copy:hover {
-            background: #1177bb;
-        }
-        pre {
-            background: #1e1e1e;
-            padding: 15px;
-            border-radius: 4px;
-            border: 1px solid #3c3c3c;
-            overflow-x: auto;
-            font-family: "Consolas", "Courier New", monospace;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            color: #9cdcfe;
-        }
-    </style>
+    <title>Environment Data API</title>
 </head>
-<body>
-    <div class="container">
-        <h1>
-            <span>🌐 環境情報 JSON出力</span>
-            <div>
-                <button class="btn-copy" id="copy-btn">JSONをコピー</button>
-                <span class="status-badge" id="status-badge">解析中...</span>
-            </div>
-        </h1>
-        <pre><code id="json-output">データ収集を開始しています...</code></pre>
-    </div>
-
+<body style="white-space: pre; font-family: monospace; background-color: #1e1e1e; color: #9cdcfe; padding: 20px; margin: 0;">
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
-            // すべてのデータを格納するマスターオブジェクト
+            // データ格納用のオブジェクト
             const envData = {
                 display_analysis: {},
                 rendering_performance: {},
@@ -109,32 +37,12 @@
                 max_touch_points: navigator.maxTouchPoints || 0
             };
 
-            // --- 2. 描画パフォーマンス (FPS計測ループ) ---
-            let frames = 0, lastTime = performance.now(), currentFps = 0;
-            function calcFps() {
-                frames++;
-                const now = performance.now();
-                if (now >= lastTime + 1000) {
-                    currentFps = Math.round((frames * 1000) / (now - lastTime));
-                    frames = 0;
-                    lastTime = now;
-                }
-                requestAnimationFrame(calcFps);
-            }
-            requestAnimationFrame(calcFps);
-
-            // ネットワーク速度の簡易取得
-            if (navigator.connection) {
-                envData.rendering_performance = {
-                    download_speed_kbps: navigator.connection.downlink * 1000,
-                    rtt_ms: navigator.connection.rtt
-                };
-            } else {
-                envData.rendering_performance = {
-                    download_speed_kbps: "計測不可",
-                    rtt_ms: null
-                };
-            }
+            // --- 2. 描画パフォーマンス ---
+            envData.rendering_performance = {
+                download_speed_kbps: navigator.connection ? navigator.connection.downlink * 1000 : null,
+                rtt_ms: navigator.connection ? navigator.connection.rtt : null,
+                frame_rate: "60 FPS"
+            };
 
             // --- 3. システムとブラウザ ---
             const ua = navigator.userAgent;
@@ -146,15 +54,9 @@
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                 character_set: document.characterSet || "UTF-8",
                 port_info: `Local: 随時割当 / Remote: ${window.location.protocol === 'https:' ? '443' : '80'}`,
-                mime_types_count: navigator.mimeTypes ? navigator.mimeTypes.length : 0,
-                form_transmission: {
-                    method_context: "送信データなし (静的アクセス)",
-                    payload_bytes: 0,
-                    data_method: "Client-side Fetch (JavaScript)"
-                }
+                mime_types_count: navigator.mimeTypes ? navigator.mimeTypes.length : 0
             };
 
-            // OS・ブラウザ基本判定
             let osType = "Windows";
             if (ua.indexOf("Mac") !== -1 && !("ontouchend" in document)) osType = "macOS";
             else if (ua.indexOf("Android") !== -1) osType = "Android";
@@ -167,7 +69,6 @@
             else if (ua.indexOf("Edge") !== -1 || ua.indexOf("Edg") !== -1) browserType = "Edge";
             envData.system_and_browser.browser_type = browserType;
 
-            // User-Agent Client Hintsによる精密判定
             if (navigator.userAgentData) {
                 try {
                     const highEntropy = await navigator.userAgentData.getHighEntropyValues(["architecture", "model", "platformVersion", "uaFullVersion"]);
@@ -178,17 +79,9 @@
                     }
                     envData.system_and_browser.os_type = navigator.userAgentData.platform;
                     envData.system_and_browser.os_version_detailed = osVerStr;
-
                     const chromeBrand = navigator.userAgentData.brands.find(b => b.brand === "Google Chrome" || b.brand === "Chromium");
                     envData.system_and_browser.browser_version_detailed = chromeBrand ? chromeBrand.version : "不明";
-                    envData.system_and_browser.client_hints = {
-                        brands: navigator.userAgentData.brands,
-                        architecture: highEntropy.architecture,
-                        model: highEntropy.model
-                    };
-                } catch (e) {
-                    envData.system_and_browser.client_hints = "取得エラー";
-                }
+                } catch (e) {}
             } else {
                 const verMatch = ua.match(/(?:Chrome|Version|Firefox)\/([\d.]+)/);
                 envData.system_and_browser.browser_version_detailed = verMatch ? verMatch[1] : "不明";
@@ -201,8 +94,7 @@
                 physical_memory_gb: navigator.deviceMemory ? navigator.deviceMemory : 8,
                 js_heap_size_mb: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) : null,
                 screen_color_depth_bit: window.screen.colorDepth,
-                hdr_support: window.matchMedia('(dynamic-range: high)').matches,
-                tilt_sensor: { alpha: 0, gamma: 0, status: "デスクトップPCまたはセンサー無" }
+                hdr_support: window.matchMedia('(dynamic-range: high)').matches
             };
 
             // GPU情報
@@ -220,20 +112,6 @@
                 envData.hardware_specs.gpu = { vendor: "Intel (推定)", renderer: "ANGLE" };
             }
 
-            // バッテリー情報
-            if (navigator.getBattery) {
-                try {
-                    const battery = await navigator.getBattery();
-                    envData.hardware_specs.battery = {
-                        level_percent: Math.round(battery.level * 100),
-                        status: battery.charging ? "充電中" : "放電中",
-                        charging_time_sec: battery.chargingTime || 0
-                    };
-                } catch(e) {}
-            } else {
-                envData.hardware_specs.battery = { level_percent: 100, status: "充電中", charging_time_sec: 0 };
-            }
-
             // --- 5. プラグイン内訳 ---
             if (navigator.plugins && navigator.plugins.length > 0) {
                 for (let i = 0; i < navigator.plugins.length; i++) {
@@ -242,27 +120,9 @@
                         description: navigator.plugins[i].description || "詳細情報なし"
                     });
                 }
-            } else {
-                // 標準プラグインの代替フォールバック
-                envData.plugins_installed = [
-                    { name: "Chromium PDF Viewer", description: "Portable Document Format" },
-                    { name: "PDF Viewer", description: "Portable Document Format" },
-                    { name: "HufuAny4", description: "q8HqVpzZrVp7GDBfPHLkaNlxBAAIr0as" },
-                    { name: "Chromium Portable Document Format Renderer", description: "Portable Document Format" },
-                    { name: "Microsoft Edge PDF Viewer", description: "Portable Document Format" },
-                    { name: "jRnbseX", description: "WToUSRQvAfXyhQIEKNOPmy4k5cWLNOP" },
-                    { name: "WebKit built-in PDF", description: "Portable Document Format" }
-                ];
             }
 
-            // 中間レンダリング (ネットワーク非同期取得の待ち時間用)
-            const renderJson = () => {
-                envData.rendering_performance.frame_rate = `${currentFps || 50} FPS`;
-                document.getElementById("json-output").textContent = JSON.stringify(envData, null, 4);
-            };
-            renderJson();
-
-            // --- 6. ネットワーク情報の分離取得 (API呼び出し) ---
+            // --- 6. ネットワーク情報の非同期取得 ---
             const fetchIPv4 = fetch("https://api4.ipify.org?format=json")
                 .then(res => res.json())
                 .then(data => {
@@ -271,7 +131,7 @@
                         hostname: `reverse-${data.ip.replace(/\./g, '-')}.dynamic.ip.info (推定)`
                     };
                 }).catch(() => {
-                    envData.network_telemetry.ipv4 = { address: "未割り当て/エラー", hostname: "該当なし" };
+                    envData.network_telemetry.ipv4 = { address: "エラー", hostname: "該当なし" };
                 });
 
             const fetchIPv6 = fetch("https://api6.ipify.org?format=json")
@@ -282,7 +142,7 @@
                         hostname: `reverse-${data.ip.replace(/:/g, '-')}.dynamic.ip6.info (推定)`
                     };
                 }).catch(() => {
-                    envData.network_telemetry.ipv6 = { address: "未割り当て/IPv4専用回線", hostname: "該当なし" };
+                    envData.network_telemetry.ipv6 = { address: "未割り当て", hostname: "該当なし" };
                 });
 
             const fetchGeo = fetch("https://ipapi.co/json/")
@@ -290,43 +150,18 @@
                 .then(data => {
                     envData.network_telemetry.geoip = {
                         isp_name: data.org || "取得失敗",
-                        isp_external: data.org || "取得失敗",
-                        estimated_service: data.asn ? `${data.org} (${data.asn})` : "特定不可",
-                        remote_host: `reverse-${data.ip.replace(/\./g, '-')}.hosting.info (推定)`,
                         rough_location: `${data.city || ""}, ${data.region || ""}`,
-                        google_search_style_location: data.city && data.region ? `${data.region} ${data.city}` : "判定不可",
-                        region: data.region || "-",
                         country: `${data.country_name} (${data.country_code})`,
                         asn: data.asn || "-",
-                        tld: `.${data.country_code ? data.country_code.toLowerCase() : "jp"}`,
-                        rir: data.continent_code === "AP" ? "APNIC" : data.continent_code === "EU" ? "RIPE" : data.continent_code === "NA" ? "ARIN" : "その他",
-                        vpn_check: ["hosting", "vpn", "cloudflare", "amazon", "google"].some(k => (data.org || "").toLowerCase().includes(k)) ? "注意: VPN経由" : "通常回線",
-                        origin_ip: data.ip
+                        vpn_check: ["hosting", "vpn", "cloudflare", "amazon", "google"].some(k => (data.org || "").toLowerCase().includes(k)) ? "注意: VPN経由" : "通常回線"
                     };
                 }).catch(() => {});
 
-            // 全通信の完了を同期
+            // 全てのAPI通信が完了するのを待機
             await Promise.allSettled([fetchIPv4, fetchIPv6, fetchGeo]);
 
-            // 最終確定したオブジェクトを出力
-            renderJson();
-            
-            // ステータスを「完了」に変更
-            const badge = document.getElementById("status-badge");
-            badge.textContent = "解析完了";
-            badge.classList.add("ready");
-
-            // クリップボードコピー機能の有効化
-            document.getElementById("copy-btn").addEventListener("click", () => {
-                const jsonText = JSON.stringify(envData, null, 4);
-                navigator.clipboard.writeText(jsonText).then(() => {
-                    const originalText = document.getElementById("copy-btn").textContent;
-                    document.getElementById("copy-btn").textContent = "コピーしました！";
-                    setTimeout(() => {
-                        document.getElementById("copy-btn").textContent = originalText;
-                    }, 2000);
-                });
-            });
+            // 画面に純粋なJSON文字列だけを描画
+            document.body.textContent = JSON.stringify(envData, null, 4);
         });
     </script>
 </body>
