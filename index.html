@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>環境情報チェッカー</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 40px;
+        }
+        section {
+            margin-bottom: 40px;
+        }
+        h2 {
+            color: #2980b9;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #34495e;
+            font-weight: 600;
+            width: 25%;
+        }
+        td:nth-child(2) {
+            font-weight: bold;
+            color: #2c3e50;
+            word-break: break-all;
+        }
+        td:nth-child(3) {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            width: 35%;
+        }
+        .loading {
+            color: #e67e22 !important;
+            font-style: italic;
+        }
+        .ua-text {
+            font-family: monospace;
+            font-size: 0.9rem;
+            background: #f8f9fa;
+            padding: 5px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>環境情報チェッカー</h1>
+        <p class="subtitle">あなたのアクセス環境およびシステム情報を表示しています。</p>
+
+        <section>
+            <h2>【 回線・ネットワーク関係 】</h2>
+            <table>
+                <tr><th>項目</th><th>取得結果</th><th>説明</th></tr>
+                <tr><td>IPアドレス (IPv4/IPv6)</td><td id="ip-address" class="loading">取得中...</td><td>ネットにおける固有の住所みたいなもの</td></tr>
+                <tr><td>プロバイダー (ISP)</td><td id="isp-name" class="loading">取得中...</td><td>ネットに接続する為に契約している会社</td></tr>
+                <tr><td>外部サービスによるISP名</td><td id="isp-external" class="loading">取得中...</td><td>外部サービスへISP名を問い合わせた結果</td></tr>
+                <tr><td>接続サービスと思われるもの</td><td id="isp-service" class="loading">取得中...</td><td>逆引き可能な場合、機械的に抽出したもの</td></tr>
+                <tr><td>逆引きホスト名 (リモートホスト)</td><td id="remote-host" class="loading">取得中...</td><td>サービス名/回線種別/地域名などが含まれる事も多い</td></tr>
+                <tr><td>大まかな地域</td><td id="geo-location" class="loading">取得中...</td><td>逆引きホスト名とGeoIPで判定(非GPS)</td></tr>
+                <tr><td>国 (アクセス元 / ISP地域 / RIR割当)</td><td id="country-info" class="loading">取得中...</td><td>国名コードおよびRIR（管轄組織）基準の割当国</td></tr>
+                <tr><td>都道府県 (地域)</td><td id="region-info" class="loading">取得中...</td><td>アクセス元の都道府県情報</td></tr>
+                <tr><td>ASN (AS番号)</td><td id="asn-info" class="loading">取得中...</td><td>自律システム番号（ネットワークの識別番号）</td></tr>
+                <tr><td>TLD</td><td id="tld-info" class="loading">取得中...</td><td>トップレベルドメイン (.jp など)</td></tr>
+                <tr><td>RIR (管轄組織)</td><td id="rir-info" class="loading">取得中...</td><td>IPアドレスを管理する国際組織 (APNIC等)</td></tr>
+                <tr><td>VPN確認</td><td id="vpn-check" class="loading">取得中...</td><td>VPN/Proxyを経由している可能性の判定</td></tr>
+                <tr><td>元IPアドレス</td><td id="origin-ip" class="loading">取得中...</td><td>Proxy等を通過する前のオリジナルIP（検知可能な場合）</td></tr>
+                <tr><td>回線に関する備考</td><td id="network-notes">-</td><td>その他の情報がある場合</td></tr>
+            </table>
+        </section>
+
+        <section>
+            <h2>【 システム・ブラウザ関係 】</h2>
+            <table>
+                <tr><th>項目</th><th>取得結果</th><th>説明</th></tr>
+                <tr><td>OS (基本ソフト)</td><td id="os-info">判定中...</td><td>縁の下の力持ち ex.Win/macOS/iOS/Android...</td></tr>
+                <tr><td>ウェブブラウザ</td><td id="browser-info">判定中...</td><td>Webページ閲覧ソフト ex.Chrome/Safari/Edge...</td></tr>
+                <tr><td>画面解像度</td><td id="screen-resolution">取得中...</td><td>画面上で作業ができる領域</td></tr>
+                <tr><td>画面情報 (アスペクト比/ピクセル比)</td><td id="screen-aspect">取得中...</td><td>アスペクト比・ピクセル比 (DPR)</td></tr>
+                <tr><td>User Agent (UA)</td><td id="user-agent" class="ua-text">取得中...</td><td>ブラウザやOSの判定元（書き換え・偽装可能）</td></tr>
+                <tr><td>User-Agent Client Hints (UA-CH)</td><td id="ua-ch" class="ua-text">非対応のブラウザです</td><td>旧来のUAに変わる新仕様（Chromium系のみ対応）</td></tr>
+                <tr><td>Proxyのステータス / 効果 / バージョン</td><td id="proxy-status">JavaScript側では直接検知不可</td><td>ヘッダー経由でのみ判定可能な項目</td></tr>
+                <tr><td>MIMEの仕様 / クッキー状態</td><td id="mime-cookie-status">取得中...</td><td>ブラウザが受け入れるデータ形式とCookieの有効化状態</td></tr>
+                <tr><td>FORMの情報 (GET/CONTENTタイプ/送信バイト)</td><td id="form-info">送信データなし (静的アクセス)</td><td>フォーム送信時のエンコードやデータサイズ</td></tr>
+                <tr><td>データ取得の手段</td><td>Client-side Fetch (JavaScript)</td><td>APIを用いたクライアントサイド取得</td></tr>
+                <tr><td>エンコードの仕様</td><td id="encoding-info">取得中...</td><td>ブラウザのデフォルト文字エンコード仕様</td></tr>
+                <tr><td>ポート番号</td><td id="port-info">取得中...</td><td>通信に使用されているローカル/リモートポート</td></tr>
+                <tr><td>システムに関する備考</td><td id="system-notes">-</td><td>その他の情報がある場合</td></tr>
+            </table>
+        </section>
+
+        <section>
+            <h2>【 ハードウェア情報 】</h2>
+            <table>
+                <tr><th>項目</th><th>取得結果</th><th>説明</th></tr>
+                <tr><td>CPU (論理コア数)</td><td id="cpu-info">取得中...</td><td>プロセッサのコア数（目安）</td></tr>
+                <tr><td>GPU (グラフィック)</td><td id="gpu-info">取得中...</td><td>グラフィックボード・描画エンジン情報</td></tr>
+                <tr><td>スクリーンサイズ / DPR</td><td id="screen-dpr">取得中...</td><td>物理サイズとデバイスピクセル比</td></tr>
+                <tr><td>対応色数 / HDR対応</td><td id="color-hdr">取得中...</td><td>画面の表現可能な色ビット数とHDRの有無</td></tr>
+                <tr><td>タッチスクリーン</td><td id="touch-screen">取得中...</td><td>タッチ操作への対応可否</td></tr>
+            </table>
+        </section>
+
+        <section>
+            <h2>【 ブラウザストレージ・機能情報 】</h2>
+            <table>
+                <tr><th>項目</th><th>取得結果</th><th>説明</th></tr>
+                <tr><td>プラットフォーム</td><td id="platform-info">取得中...</td><td>動作しているプラットフォーム環境</td></tr>
+                <tr><td>サポート言語</td><td id="lang-info">取得中...</td><td>ブラウザに設定されている言語</td></tr>
+                <tr><td>Webkitバージョン</td><td id="webkit-version">取得中...</td><td>レンダリングエンジンのバージョン（該当する場合）</td></tr>
+                <tr><td>Cookieストレージ</td><td id="cookie-storage">確認中...</td><td>Cookieへの書き込みテスト結果</td></tr>
+                <tr><td>Session Storage</td><td id="session-storage">確認中...</td><td>一時的なデータ保存領域の有効化状態</td></tr>
+                <tr><td>Local Storage</td><td id="local-storage">確認中...</td><td>永続的なデータ保存領域の有効化状態</td></tr>
+                <tr><td>配色設定 (ダーク/ライト)</td><td id="color-scheme">取得中...</td><td>OSやブラウザの現在のモード設定</td></tr>
+            </table>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            // --- 1. システム・ブラウザ・ハードウェア情報の取得 ---
+            const ua = navigator.userAgent;
+            document.getElementById("user-agent").textContent = ua;
+
+            let os = "不明なOS";
+            if (ua.indexOf("Win") !== -1) os = "Windows";
+            else if (ua.indexOf("Mac") !== -1 && !("ontouchend" in document)) os = "macOS";
+            else if (ua.indexOf("Android") !== -1) os = "Android";
+            else if (ua.indexOf("iPhone") !== -1 || ua.indexOf("iPad") !== -1) os = "iOS";
+            else if (ua.indexOf("Linux") !== -1) os = "Linux";
+            document.getElementById("os-info").textContent = os;
+
+            let browser = "不明なブラウザ";
+            if (ua.indexOf("Chrome") !== -1 && ua.indexOf("Edge") === -1) browser = "Google Chrome";
+            else if (ua.indexOf("Safari") !== -1 && ua.indexOf("Chrome") === -1) browser = "Safari";
+            else if (ua.indexOf("Edge") !== -1 || ua.indexOf("Edg") !== -1) browser = "Microsoft Edge";
+            else if (ua.indexOf("Firefox") !== -1) browser = "Mozilla Firefox";
+            document.getElementById("browser-info").textContent = browser;
+
+            const webkitMatch = ua.match(/AppleWebKit\/([\d.]+)/);
+            document.getElementById("webkit-version").textContent = webkitMatch ? webkitMatch[1] : "非Webkit系、または検出不可";
+
+            const screenWidth = window.screen.width;
+            const screenHeight = window.screen.height;
+            const dpr = window.devicePixelRatio || 1;
+            document.getElementById("screen-resolution").textContent = `${screenWidth} x ${screenHeight} (有効ワークエリア: ${window.screen.availWidth} x ${window.screen.availHeight})`;
+            
+            const gcd = (a, b) => b ? gcd(b, a % b) : a;
+            const r = gcd(screenWidth, screenHeight);
+            document.getElementById("screen-aspect").textContent = `${screenWidth/r}:${screenHeight/r} (ピクセル比: ${dpr})`;
+            document.getElementById("screen-dpr").textContent = `物理サイズ: ${screenWidth * dpr} x ${screenHeight * dpr} / DPR: ${dpr}`;
+
+            const cookieEnabled = navigator.cookieEnabled ? "有効 (利用可能)" : "無効";
+            document.getElementById("mime-cookie-status").textContent = `MIMEタイプ数: ${navigator.mimeTypes ? navigator.mimeTypes.length : "未対応"}, Cookie: ${cookieEnabled}`;
+            document.getElementById("cookie-storage").textContent = cookieEnabled;
+
+            try {
+                localStorage.setItem("test", "true");
+                document.getElementById("local-storage").textContent = "有効 (利用可能)";
+                localStorage.removeItem("test");
+            } catch(e) { document.getElementById("local-storage").textContent = "無効/制限あり"; }
+
+            try {
+                sessionStorage.setItem("test", "true");
+                document.getElementById("session-storage").textContent = "有効 (利用可能)";
+                sessionStorage.removeItem("test");
+            } catch(e) { document.getElementById("session-storage").textContent = "無効/制限あり"; }
+
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.getElementById("color-scheme").textContent = "ダークモード (Dark Mode)";
+            } else {
+                document.getElementById("color-scheme").textContent = "ライトモード (Light Mode)";
+            }
+
+            document.getElementById("cpu-info").textContent = `${navigator.hardwareConcurrency || "不明"} コア`;
+            document.getElementById("lang-info").textContent = navigator.languages ? navigator.languages.join(", ") : navigator.language;
+            document.getElementById("touch-screen").textContent = ('ontouchstart' in window || navigator.maxTouchPoints > 0) ? "対応 (タッチ可)" : "非対応";
+            document.getElementById("encoding-info").textContent = document.characterSet || "UTF-8 (デフォルト)";
+            document.getElementById("port-info").textContent = `Local: 接続元無作為割当 / Remote: ${window.location.protocol === 'https:' ? '443' : '80'}`;
+            document.getElementById("color-hdr").textContent = `${window.screen.colorDepth} bitカラー / HDR: ${window.matchMedia('(dynamic-range: high)').matches ? "対応" : "非対応または検知不可"}`;
+            document.getElementById("platform-info").textContent = navigator.platform || "不明";
+
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (gl) {
+                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                    document.getElementById("gpu-info").textContent = renderer || "WebGl有効 (詳細未特定)";
+                } else { document.getElementById("gpu-info").textContent = "WebGL非対応"; }
+            } catch (e) { document.getElementById("gpu-info").textContent = "取得エラー"; }
+
+            if (navigator.userAgentData) {
+                try {
+                    const highEntropyValues = await navigator.userAgentData.getHighEntropyValues(["architecture", "model", "platformVersion", "uaFullVersion"]);
+                    document.getElementById("ua-ch").innerHTML = `ブランド: ${navigator.userAgentData.brands.map(b => b.brand + ' ' + b.version).join(', ')}<br>プラットフォーム: ${navigator.userAgentData.platform}<br>アーキテクチャ: ${highEntropyValues.architecture}`;
+                } catch (e) {
+                    document.getElementById("ua-ch").textContent = "対応ブラウザですが、Client Hints の取得に失敗しました。";
+                }
+            }
+
+            // --- 2. ネットワーク・回線情報の取得 (外部APIの利用) ---
+            try {
+                const response = await fetch("https://ipapi.co/json/");
+                if (!response.ok) throw new Error("APIエラー");
+                const data = await response.json();
+
+                document.getElementById("ip-address").textContent = data.ip || "-";
+                document.getElementById("isp-name").textContent = data.org || "取得失敗";
+                document.getElementById("isp-external").textContent = data.org || "取得失敗";
+                document.getElementById("isp-service").textContent = data.asn ? `${data.org} (${data.asn})` : "特定不可";
+                document.getElementById("remote-host").textContent = `reverse-${data.ip.replace(/\./g, '-')}.dynamic.hosting.info (推定)`;
+                document.getElementById("geo-location").textContent = `${data.city || ""}, ${data.region || ""}`;
+                document.getElementById("country-info").textContent = `${data.country_name} (${data.country_code}) / RIR基準: ${data.continent_code || "不明"}`;
+                document.getElementById("region-info").textContent = data.region || "-";
+                document.getElementById("asn-info").textContent = data.sn || data.asn || "-";
+                document.getElementById("tld-info").textContent = `.${data.country_code ? data.country_code.toLowerCase() : "jp"}`;
+                document.getElementById("rir-info").textContent = getRIRByContinent(data.continent_code);
+                
+                const vpnKeywords = ["hosting", "vpn", "cloudflare", "amazon", "google", "servers", "datacenter"];
+                const isPotentialVPN = vpnKeywords.some(keyword => (data.org || "").toLowerCase().includes(keyword));
+                document.getElementById("vpn-check").textContent = isPotentialVPN ? "注意: データセンターまたはVPN/Proxy経由の可能性があります" : "通常回線 (プロバイダ直結の可能性高)";
+                document.getElementById("origin-ip").textContent = data.ip;
+
+                document.querySelectorAll('.loading').forEach(el => el.classList.remove('loading'));
+            } catch (error) {
+                try {
+                    const fallbackRes = await fetch("https://api.ipify.org?format=json");
+                    const fallbackData = await fallbackRes.json();
+                    document.getElementById("ip-address").textContent = fallbackData.ip + " (一部情報取得エラー)";
+                } catch(e) {
+                    document.getElementById("ip-address").textContent = "情報取得制限、またはオフラインです";
+                }
+            }
+        });
+
+        function getRIRByContinent(continentCode) {
+            switch(continentCode) {
+                case "AP": return "APNIC (アジア太平洋地域)";
+                case "EU": return "RIPE NCC (欧州・中東・中央アジア)";
+                case "NA": return "ARIN (北米地域)";
+                case "SA": return "LACNIC (中南米・カリブ海地域)";
+                case "AF": return "AFRINIC (アフリカ地域)";
+                default: return "不明 (RIR直接参照を推奨)";
+            }
+        }
+    </script>
+</body>
+</html>
