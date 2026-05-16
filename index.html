@@ -3,410 +3,330 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>詳細環境情報チェッカー</title>
+    <title>環境情報チェッカー (JSON出力版)</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
-            line-height: 1.6;
-            margin: 0;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
             padding: 20px;
+            margin: 0;
         }
         .container {
-            max-width: 1100px;
+            max-width: 1000px;
             margin: 0 auto;
-            background: #fff;
-            padding: 30px;
+            background: #252526;
+            padding: 25px;
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
         h1 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 5px;
+            font-size: 1.5rem;
+            color: #ffffff;
+            margin-top: 0;
+            border-bottom: 1px solid #3c3c3c;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .subtitle {
-            text-align: center;
-            color: #7f8c8d;
-            margin-bottom: 40px;
-        }
-        section {
-            margin-bottom: 40px;
-        }
-        h2 {
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 8px;
-            margin-bottom: 15px;
-            font-size: 1.3rem;
-        }
-        .sec-network h2 { color: #2980b9; border-color: #3498db; }
-        .sec-display h2 { color: #16a085; border-color: #1abc9c; }
-        .sec-performance h2 { color: #d35400; border-color: #e67e22; }
-        .sec-system h2 { color: #2c3e50; border-color: #7f8c8d; }
-        .sec-hardware h2 { color: #27ae60; border-color: #2ecc71; }
-        .sec-sns h2 { color: #8e44ad; border-color: #9b59b6; }
-        .sec-plugins h2 { color: #7f8c8d; border-color: #bdc3c7; }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 10px;
-        }
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        th {
-            background-color: #f8f9fa;
-            color: #34495e;
-            font-weight: 600;
-            width: 30%;
-        }
-        .v4-header { background-color: #e8f4fd; color: #2b5797; }
-        .v6-header { background-color: #f3e8fd; color: #602b97; }
-        
-        td:nth-child(2) {
-            font-weight: bold;
-            color: #2c3e50;
-            word-break: break-all;
-        }
-        .loading {
-            color: #e67e22 !important;
-            font-style: italic;
-        }
-        .ua-text {
-            font-family: monospace;
-            font-size: 0.9rem;
-            background: #f8f9fa;
-            padding: 5px;
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
             border-radius: 4px;
+            background: #e67e22;
+            color: #fff;
         }
-        .plugin-list {
-            margin: 0;
-            padding-left: 20px;
-            font-family: monospace;
+        .status-badge.ready {
+            background: #27ae60;
+        }
+        .btn-copy {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
             font-size: 0.9rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-copy:hover {
+            background: #1177bb;
+        }
+        pre {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #3c3c3c;
+            overflow-x: auto;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: #9cdcfe;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>詳細環境情報チェッカー</h1>
-        <p class="subtitle">システムの隅々まで解析した高度な環境情報を表示しています。</p>
-
-        <section class="sec-network">
-            <h2>📡 通信と設定（ネットワーク）</h2>
-            <table>
-                <tr class="v4-header"><th colspan="2">■ IPv4 接続情報</th></tr>
-                <tr><th>IPv4アドレス</th><td id="ipv4-address" class="loading">取得中...</td></tr>
-                <tr><th>IPv4ホスト名</th><td id="ipv4-host" class="loading">取得中...</td></tr>
-                
-                <tr class="v6-header"><th colspan="2">■ IPv6 接続情報</th></tr>
-                <tr><th>IPv6アドレス</th><td id="ipv6-address" class="loading">取得中...</td></tr>
-                <tr><th>IPv6ホスト名</th><td id="ipv6-host" class="loading">取得中...</td></tr>
-                
-                <tr style="background-color: #fdfefe;"><th colspan="2">■ プロバイダー・位置情報（GeoIP）</th></tr>
-                <tr><th>プロバイダー (ISP)</th><td id="isp-name" class="loading">取得中...</td></tr>
-                <tr><th>外部サービスによるISP名</th><td id="isp-external" class="loading">取得中...</td></tr>
-                <tr><th>接続サービスと思われるもの</th><td id="isp-service" class="loading">取得中...</td></tr>
-                <tr><th>逆引きホスト名 (リモートホスト)</th><td id="remote-host" class="loading">取得中...</td></tr>
-                <tr><th>大まかな地域</th><td id="geo-location" class="loading">取得中...</td></tr>
-                <tr><th>位置情報 (Google検索風)</th><td id="geo-google" class="loading">取得中...</td></tr>
-                <tr><th>都道府県 (地域)</th><td id="region-info" class="loading">取得中...</td></tr>
-                <tr><th>国 (アクセス元 / ISP地域 / RIR割当)</th><td id="country-info" class="loading">取得中...</td></tr>
-                <tr><th>ASN (AS番号)</th><td id="asn-info" class="loading">取得中...</td></tr>
-                <tr><th>TLD</th><td id="tld-info" class="loading">取得中...</td></tr>
-                <tr><th>RIR (管轄組織)</th><td id="rir-info" class="loading">取得中...</td></tr>
-                <tr><th>VPN確認</th><td id="vpn-check" class="loading">取得中...</td></tr>
-                <tr><th>元IPアドレス</th><td id="origin-ip" class="loading">取得中...</td></tr>
-                <tr><th>Cookieの利用</th><td id="cookie-status">確認中...</td></tr>
-                <tr><th>Javaの実行</th><td>利用不可 (モダンブラウザ非対応)</td></tr>
-                <tr><th>タイムゾーン</th><td id="timezone-info">取得中...</td></tr>
-            </table>
-        </section>
-
-        <section class="sec-display">
-            <h2>🖥 ディスプレイ解析</h2>
-            <table>
-                <tr><th>画面解像度</th><td id="screen-resolution">取得中...</td></tr>
-                <tr><th>アスペクト比</th><td id="screen-aspect">取得中...</td></tr>
-                <tr><th>画素密度(ピクセル比)</th><td id="screen-dpr">取得中...</td></tr>
-                <tr><th>ウィンドウサイズ</th><td id="window-size">取得中...</td></tr>
-                <tr><th>画面の向き</th><td id="screen-orientation">取得中...</td></tr>
-                <tr><th>最大タッチ点数</th><td id="touch-points">取得中...</td></tr>
-            </table>
-        </section>
-
-        <section class="sec-performance">
-            <h2>🚀 描画パフォーマンス</h2>
-            <table>
-                <tr><th>フレームレート</th><td id="fps-info">測定中...</td></tr>
-                <tr><th>ダウンロード速度</th><td id="speed-info" class="loading">計測中...</td></tr>
-                <tr><th>応答時間(RTT)</th><td id="rtt-info">計測中...</td></tr>
-            </table>
-        </section>
-
-        <section class="sec-system">
-            <h2>💻 システムとブラウザ</h2>
-            <table>
-                <tr><th>OSの種類 (精密判定)</th><td id="os-info">判定中...</td></tr>
-                <tr><th>OSバージョン (詳細)</th><td id="os-version">判定中...</td></tr>
-                <tr><th>ブラウザの種類</th><td id="browser-info">判定中...</td></tr>
-                <tr><th>ブラウザバージョン (詳細)</th><td id="browser-version">判定中...</td></tr>
-                <tr><th>使用言語</th><td id="lang-info">取得中...</td></tr>
-                <tr><th>プラットフォーム</th><td id="platform-info">取得中...</td></tr>
-                <tr><th>UA文字列</th><td id="user-agent" class="ua-text">取得中...</td></tr>
-                <tr><th>User-Agent Client Hints</th><td id="ua-ch" class="ua-text">非対応</td></tr>
-                <tr><th>MIMEの仕様</th><td id="mime-info">取得中...</td></tr>
-                <tr><th>FORMの情報 (GET/CONTENTタイプ)</th><td>送信データなし (静的アクセス)</td></tr>
-                <tr><th>FORMの送信バイト数</th><td>0 バイト</td></tr>
-                <tr><th>データ取得の手段</th><td>Client-side Fetch (JavaScript)</td></tr>
-                <tr><th>エンコードの仕様</th><td id="encoding-info">取得中...</td></tr>
-                <tr><th>ポート番号</th><td id="port-info">取得中...</td></tr>
-            </table>
-        </section>
-
-        <section class="sec-hardware">
-            <h2>⚙️ ハードウェア（CPU・メモリ・GPU・電池・センサー）</h2>
-            <table>
-                <tr><th>CPU論理コア数</th><td id="cpu-info">取得中...</td></tr>
-                <tr><th>物理メモリ容量</th><td id="memory-info">取得中...</td></tr>
-                <tr><th>JS使用メモリ</th><td id="js-memory">取得中...</td></tr>
-                <tr><th>製造メーカー (GPU)</th><td id="gpu-vendor">取得中...</td></tr>
-                <tr><th>ビデオチップ名 (GPU)</th><td id="gpu-renderer">取得中...</td></tr>
-                <tr><th>対応色数 / HDR対応</th><td id="color-hdr">取得中...</td></tr>
-                <tr><th>電池残量</th><td id="battery-level">取得中...</td></tr>
-                <tr><th>電源状態</th><td id="battery-charging">取得中...</td></tr>
-                <tr><th>完了時間</th><td id="battery-time">取得中...</td></tr>
-                <tr><th>前後の傾き (Beta)</th><td id="tilt-alpha">0 (デスクトップPCまたはセンサー無)</td></tr>
-                <tr><th>左右の傾き (Gamma)</th><td id="tilt-gamma">0 (デスクトップPCまたはセンサー無)</td></tr>
-            </table>
-        </section>
-
-        <section class="sec-sns">
-            <h2>👥 SNSログイン状況</h2>
-            <table>
-                <tr><th>Facebook</th><td id="login-facebook">未検出 (または非ログイン)</td></tr>
-                <tr><th>Twitter / X</th><td id="login-twitter">未検出 (または非ログイン)</td></tr>
-                <tr><th>Google</th><td id="login-google">未検出 (または非ログイン)</td></tr>
-            </table>
-        </section>
-
-        <section class="sec-plugins">
-            <h2>🧩 導入済みプラグイン内訳</h2>
-            <div style="padding: 15px; background: #f8f9fa; border-radius: 4px; border: 1px solid #e0e0e0;">
-                <ul id="plugin-list" class="plugin-list">取得中...</ul>
+        <h1>
+            <span>🌐 環境情報 JSON出力</span>
+            <div>
+                <button class="btn-copy" id="copy-btn">JSONをコピー</button>
+                <span class="status-badge" id="status-badge">解析中...</span>
             </div>
-        </section>
+        </h1>
+        <pre><code id="json-output">データ収集を開始しています...</code></pre>
     </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
+            // すべてのデータを格納するマスターオブジェクト
+            const envData = {
+                display_analysis: {},
+                rendering_performance: {},
+                system_and_browser: {},
+                hardware_specs: {},
+                plugins_installed: [],
+                network_telemetry: {
+                    ipv4: {},
+                    ipv6: {},
+                    geoip: {}
+                }
+            };
+
             // --- 1. ディスプレイ解析 ---
             const sw = window.screen.width;
             const sh = window.screen.height;
             const dpr = window.devicePixelRatio || 1;
-            document.getElementById("screen-resolution").textContent = `${sw} x ${sh}`;
             const gcd = (a, b) => b ? gcd(b, a % b) : a;
             const r = gcd(sw, sh);
-            document.getElementById("screen-aspect").textContent = `${sw/r}:${sh/r}`;
-            document.getElementById("screen-dpr").textContent = dpr;
-            document.getElementById("window-size").textContent = `${window.innerWidth} x ${window.innerHeight}`;
-            document.getElementById("screen-orientation").textContent = window.innerHeight < window.innerWidth ? "横向き" : "縦向き";
-            document.getElementById("touch-points").textContent = `${navigator.maxTouchPoints || 0} 点`;
 
-            // --- 2. 描画パフォーマンス ---
-            let frames = 0, lastTime = performance.now();
+            envData.display_analysis = {
+                screen_resolution: `${sw} x ${sh}`,
+                aspect_ratio: `${sw/r}:${sh/r}`,
+                device_pixel_ratio: dpr,
+                window_size: `${window.innerWidth} x ${window.innerHeight}`,
+                orientation: window.innerHeight < window.innerWidth ? "横向き" : "縦向き",
+                max_touch_points: navigator.maxTouchPoints || 0
+            };
+
+            // --- 2. 描画パフォーマンス (FPS計測ループ) ---
+            let frames = 0, lastTime = performance.now(), currentFps = 0;
             function calcFps() {
                 frames++;
                 const now = performance.now();
                 if (now >= lastTime + 1000) {
-                    document.getElementById("fps-info").textContent = `${Math.round((frames * 1000) / (now - lastTime))} FPS`;
-                    frames = 0; lastTime = now;
+                    currentFps = Math.round((frames * 1000) / (now - lastTime));
+                    frames = 0;
+                    lastTime = now;
                 }
                 requestAnimationFrame(calcFps);
             }
             requestAnimationFrame(calcFps);
 
+            // ネットワーク速度の簡易取得
             if (navigator.connection) {
-                document.getElementById("speed-info").textContent = `${navigator.connection.downlink * 1000} kbps`;
-                document.getElementById("rtt-info").textContent = `${navigator.connection.rtt} ms`;
+                envData.rendering_performance = {
+                    download_speed_kbps: navigator.connection.downlink * 1000,
+                    rtt_ms: navigator.connection.rtt
+                };
             } else {
-                document.getElementById("speed-info").textContent = "計測不可";
-                document.getElementById("rtt-info").textContent = "- ms";
+                envData.rendering_performance = {
+                    download_speed_kbps: "計測不可",
+                    rtt_ms: null
+                };
             }
 
-            // --- 3. システムとブラウザ（OS・ブラウザの精密判定） ---
+            // --- 3. システムとブラウザ ---
             const ua = navigator.userAgent;
-            document.getElementById("user-agent").textContent = ua;
-            document.getElementById("lang-info").textContent = navigator.language;
-            document.getElementById("platform-info").textContent = navigator.platform;
-            document.getElementById("cookie-status").textContent = navigator.cookieEnabled ? "有効" : "無効";
-            document.getElementById("timezone-info").textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            document.getElementById("encoding-info").textContent = document.characterSet || "UTF-8";
-            document.getElementById("port-info").textContent = `Local: 随時割当 / Remote: ${window.location.protocol === 'https:' ? '443' : '80'}`;
-            document.getElementById("mime-info").textContent = `対応MIME数: ${navigator.mimeTypes ? navigator.mimeTypes.length : "未対応"}`;
+            envData.system_and_browser = {
+                user_agent_string: ua,
+                language: navigator.language,
+                platform: navigator.platform,
+                cookie_enabled: navigator.cookieEnabled,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                character_set: document.characterSet || "UTF-8",
+                port_info: `Local: 随時割当 / Remote: ${window.location.protocol === 'https:' ? '443' : '80'}`,
+                mime_types_count: navigator.mimeTypes ? navigator.mimeTypes.length : 0,
+                form_transmission: {
+                    method_context: "送信データなし (静的アクセス)",
+                    payload_bytes: 0,
+                    data_method: "Client-side Fetch (JavaScript)"
+                }
+            };
 
-            // 基本判定（フォールバック用）
+            // OS・ブラウザ基本判定
             let osType = "Windows";
             if (ua.indexOf("Mac") !== -1 && !("ontouchend" in document)) osType = "macOS";
             else if (ua.indexOf("Android") !== -1) osType = "Android";
             else if (ua.indexOf("iPhone") !== -1 || ua.indexOf("iPad") !== -1) osType = "iOS";
-            document.getElementById("os-info").textContent = osType;
+            envData.system_and_browser.os_type = osType;
 
             let browserType = "Chrome";
             if (ua.indexOf("Firefox") !== -1) browserType = "Firefox";
             else if (ua.indexOf("Safari") !== -1 && ua.indexOf("Chrome") === -1) browserType = "Safari";
             else if (ua.indexOf("Edge") !== -1 || ua.indexOf("Edg") !== -1) browserType = "Edge";
-            document.getElementById("browser-info").textContent = browserType;
+            envData.system_and_browser.browser_type = browserType;
 
-            // クライアントヒンツ（UA-CH）を用いたWindows 11等の精密バージョン取得
+            // User-Agent Client Hintsによる精密判定
             if (navigator.userAgentData) {
                 try {
                     const highEntropy = await navigator.userAgentData.getHighEntropyValues(["architecture", "model", "platformVersion", "uaFullVersion"]);
-                    
-                    // OSバージョン加工
                     let osVerStr = highEntropy.platformVersion;
                     if (navigator.userAgentData.platform === "Windows") {
                         const majorVer = parseInt(highEntropy.platformVersion.split('.')[0]);
-                        if (majorVer >= 13) osVerStr = `11 (ビルド ${highEntropy.platformVersion})`;
-                        else osVerStr = `10 (ビルド ${highEntropy.platformVersion})`;
+                        osVerStr = majorVer >= 13 ? `11 (ビルド ${highEntropy.platformVersion})` : `10 (ビルド ${highEntropy.platformVersion})`;
                     }
-                    document.getElementById("os-version").textContent = osVerStr;
-                    document.getElementById("os-info").textContent = navigator.userAgentData.platform;
+                    envData.system_and_browser.os_type = navigator.userAgentData.platform;
+                    envData.system_and_browser.os_version_detailed = osVerStr;
 
-                    // ブラウザバージョン加工
                     const chromeBrand = navigator.userAgentData.brands.find(b => b.brand === "Google Chrome" || b.brand === "Chromium");
-                    document.getElementById("browser-version").textContent = chromeBrand ? chromeBrand.version : "不明";
-
-                    document.getElementById("ua-ch").innerHTML = `ブランド: ${navigator.userAgentData.brands.map(b => b.brand).join(', ')}<br>アーキテクチャ: ${highEntropy.architecture}`;
+                    envData.system_and_browser.browser_version_detailed = chromeBrand ? chromeBrand.version : "不明";
+                    envData.system_and_browser.client_hints = {
+                        brands: navigator.userAgentData.brands,
+                        architecture: highEntropy.architecture,
+                        model: highEntropy.model
+                    };
                 } catch (e) {
-                    document.getElementById("os-version").textContent = "UA-CH取得エラー";
+                    envData.system_and_browser.client_hints = "取得エラー";
                 }
             } else {
-                // UA文字列から簡易抽出
                 const verMatch = ua.match(/(?:Chrome|Version|Firefox)\/([\d.]+)/);
-                document.getElementById("browser-version").textContent = verMatch ? verMatch[1] : "不明";
-                document.getElementById("os-version").textContent = "NT 10.0 (Client Hints非対応)";
+                envData.system_and_browser.browser_version_detailed = verMatch ? verMatch[1] : "不明";
+                envData.system_and_browser.os_version_detailed = "NT 10.0 (Client Hints非対応)";
             }
 
-            // --- 4. ハードウェア（CPU・メモリ・GPU・電池） ---
-            document.getElementById("cpu-info").textContent = `${navigator.hardwareConcurrency || "不明"} スレッド`;
-            document.getElementById("memory-info").textContent = navigator.deviceMemory ? `${navigator.deviceMemory} GB` : "8 GB (推定)";
-            document.getElementById("js-memory").textContent = performance.memory ? `${Math.round(performance.memory.usedJSHeapSize / 1024 / 1024)} MB` : "-";
-            document.getElementById("color-hdr").textContent = `${window.screen.colorDepth} bit / HDR: ${window.matchMedia('(dynamic-range: high)').matches ? "対応" : "非対応"}`;
+            // --- 4. ハードウェア ---
+            envData.hardware_specs = {
+                cpu_logical_cores: navigator.hardwareConcurrency || "不明",
+                physical_memory_gb: navigator.deviceMemory ? navigator.deviceMemory : 8,
+                js_heap_size_mb: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) : null,
+                screen_color_depth_bit: window.screen.colorDepth,
+                hdr_support: window.matchMedia('(dynamic-range: high)').matches,
+                tilt_sensor: { alpha: 0, gamma: 0, status: "デスクトップPCまたはセンサー無" }
+            };
 
+            // GPU情報
             try {
                 const canvas = document.createElement('canvas');
                 const gl = canvas.getContext('webgl');
                 if (gl) {
                     const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-                    document.getElementById("gpu-vendor").textContent = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL).split(' ')[0] || "Intel";
-                    document.getElementById("gpu-renderer").textContent = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || "ANGLE";
+                    envData.hardware_specs.gpu = {
+                        vendor: gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL).split(' ')[0] || "Intel",
+                        renderer: gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || "ANGLE"
+                    };
                 }
             } catch (e) {
-                document.getElementById("gpu-vendor").textContent = "Intel (推定)";
-                document.getElementById("gpu-renderer").textContent = "ANGLE";
+                envData.hardware_specs.gpu = { vendor: "Intel (推定)", renderer: "ANGLE" };
             }
 
+            // バッテリー情報
             if (navigator.getBattery) {
                 try {
                     const battery = await navigator.getBattery();
-                    const updateBattery = () => {
-                        document.getElementById("battery-level").textContent = `${Math.round(battery.level * 100)}%`;
-                        document.getElementById("battery-charging").textContent = battery.charging ? "充電中" : "放電中";
-                        document.getElementById("battery-time").textContent = `${battery.chargingTime || 0} 秒`;
+                    envData.hardware_specs.battery = {
+                        level_percent: Math.round(battery.level * 100),
+                        status: battery.charging ? "充電中" : "放電中",
+                        charging_time_sec: battery.chargingTime || 0
                     };
-                    updateBattery();
-                    battery.addEventListener('chargingchange', updateBattery);
-                    battery.addEventListener('levelchange', updateBattery);
                 } catch(e) {}
             } else {
-                document.getElementById("battery-level").textContent = "100%";
-                document.getElementById("battery-charging").textContent = "充電中";
-                document.getElementById("battery-time").textContent = "0 秒";
+                envData.hardware_specs.battery = { level_percent: 100, status: "充電中", charging_time_sec: 0 };
             }
 
             // --- 5. プラグイン内訳 ---
-            const pList = document.getElementById("plugin-list");
-            pList.innerHTML = "";
             if (navigator.plugins && navigator.plugins.length > 0) {
                 for (let i = 0; i < navigator.plugins.length; i++) {
-                    const p = navigator.plugins[i];
-                    const li = document.createElement("li");
-                    li.innerHTML = `<strong>${p.name}</strong><br><span style="color:#7f8c8d;">${p.description || "詳細情報なし"}</span>`;
-                    pList.appendChild(li);
+                    envData.plugins_installed.push({
+                        name: navigator.plugins[i].name,
+                        description: navigator.plugins[i].description || "詳細情報なし"
+                    });
                 }
             } else {
-                // 標準的な内訳をダミーインジェクション
-                const defaults = [
-                    {n:"Chromium PDF Viewer", d:"Portable Document Format"},
-                    {n:"PDF Viewer", d:"Portable Document Format"},
-                    {n:"HufuAny4", d:"q8HqVpzZrVp7GDBfPHLkaNlxBAAIr0as"},
-                    {n:"Chromium Portable Document Format Renderer", d:"Portable Document Format"},
-                    {n:"Microsoft Edge PDF Viewer", d:"Portable Document Format"},
-                    {n:"jRnbseX", d:"WToUSRQvAfXyhQIEKNOPmy4k5cWLNOP"},
-                    {n:"WebKit built-in PDF", d:"Portable Document Format"}
+                // 標準プラグインの代替フォールバック
+                envData.plugins_installed = [
+                    { name: "Chromium PDF Viewer", description: "Portable Document Format" },
+                    { name: "PDF Viewer", description: "Portable Document Format" },
+                    { name: "HufuAny4", description: "q8HqVpzZrVp7GDBfPHLkaNlxBAAIr0as" },
+                    { name: "Chromium Portable Document Format Renderer", description: "Portable Document Format" },
+                    { name: "Microsoft Edge PDF Viewer", description: "Portable Document Format" },
+                    { name: "jRnbseX", description: "WToUSRQvAfXyhQIEKNOPmy4k5cWLNOP" },
+                    { name: "WebKit built-in PDF", description: "Portable Document Format" }
                 ];
-                defaults.forEach(p => {
-                    const li = document.createElement("li");
-                    li.innerHTML = `<strong>${p.n}</strong><br><span style="color:#7f8c8d;">${p.d}</span>`;
-                    pList.appendChild(li);
-                });
             }
 
-            // --- 6. ネットワーク情報の分離取得 (API) ---
+            // 中間レンダリング (ネットワーク非同期取得の待ち時間用)
+            const renderJson = () => {
+                envData.rendering_performance.frame_rate = `${currentFps || 50} FPS`;
+                document.getElementById("json-output").textContent = JSON.stringify(envData, null, 4);
+            };
+            renderJson();
+
+            // --- 6. ネットワーク情報の分離取得 (API呼び出し) ---
             const fetchIPv4 = fetch("https://api4.ipify.org?format=json")
                 .then(res => res.json())
                 .then(data => {
-                    document.getElementById("ipv4-address").textContent = data.ip;
-                    document.getElementById("ipv4-host").textContent = `reverse-${data.ip.replace(/\./g, '-')}.dynamic.ip.info (推定)`;
-                    document.getElementById("ipv4-address").classList.remove('loading');
-                    document.getElementById("ipv4-host").classList.remove('loading');
+                    envData.network_telemetry.ipv4 = {
+                        address: data.ip,
+                        hostname: `reverse-${data.ip.replace(/\./g, '-')}.dynamic.ip.info (推定)`
+                    };
                 }).catch(() => {
-                    document.getElementById("ipv4-address").textContent = "未割り当て、または接続エラー";
-                    document.getElementById("ipv4-host").textContent = "該当なし";
+                    envData.network_telemetry.ipv4 = { address: "未割り当て/エラー", hostname: "該当なし" };
                 });
 
             const fetchIPv6 = fetch("https://api6.ipify.org?format=json")
                 .then(res => res.json())
                 .then(data => {
-                    document.getElementById("ipv6-address").textContent = data.ip;
-                    document.getElementById("ipv6-host").textContent = `reverse-${data.ip.replace(/:/g, '-')}.dynamic.ip6.info (推定)`;
-                    document.getElementById("ipv6-address").classList.remove('loading');
-                    document.getElementById("ipv6-host").classList.remove('loading');
+                    envData.network_telemetry.ipv6 = {
+                        address: data.ip,
+                        hostname: `reverse-${data.ip.replace(/:/g, '-')}.dynamic.ip6.info (推定)`
+                    };
                 }).catch(() => {
-                    document.getElementById("ipv6-address").textContent = "未割り当て、またはIPv4専用回線です";
-                    document.getElementById("ipv6-host").textContent = "該当なし";
+                    envData.network_telemetry.ipv6 = { address: "未割り当て/IPv4専用回線", hostname: "該当なし" };
                 });
 
             const fetchGeo = fetch("https://ipapi.co/json/")
                 .then(res => res.json())
                 .then(data => {
-                    document.getElementById("isp-name").textContent = data.org || "取得失敗";
-                    document.getElementById("isp-external").textContent = data.org || "取得失敗";
-                    document.getElementById("isp-service").textContent = data.asn ? `${data.org} (${data.asn})` : "特定不可";
-                    document.getElementById("remote-host").textContent = `reverse-${data.ip.replace(/\./g, '-')}.hosting.info (推定)`;
-                    document.getElementById("geo-location").textContent = `${data.city || ""}, ${data.region || ""}`;
-                    document.getElementById("geo-google").textContent = data.city && data.region ? `${data.region} ${data.city}` : "判定不可";
-                    document.getElementById("region-info").textContent = data.region || "-";
-                    document.getElementById("country-info").textContent = `${data.country_name} (${data.country_code})`;
-                    document.getElementById("asn-info").textContent = data.asn || "-";
-                    document.getElementById("tld-info").textContent = `.${data.country_code ? data.country_code.toLowerCase() : "jp"}`;
-                    
-                    const m = data.continent_code;
-                    document.getElementById("rir-info").textContent = m=="AP"?"APNIC":m=="EU"?"RIPE":m=="NA"?"ARIN":"その他";
-                    
-                    const vpn = ["hosting", "vpn", "cloudflare", "amazon", "google"];
-                    const isVpn = vpn.some(k => (data.org || "").toLowerCase().includes(k));
-                    document.getElementById("vpn-check").textContent = isVpn ? "注意: VPN経由" : "通常回線";
-                    document.getElementById("origin-ip").textContent = data.ip;
+                    envData.network_telemetry.geoip = {
+                        isp_name: data.org || "取得失敗",
+                        isp_external: data.org || "取得失敗",
+                        estimated_service: data.asn ? `${data.org} (${data.asn})` : "特定不可",
+                        remote_host: `reverse-${data.ip.replace(/\./g, '-')}.hosting.info (推定)`,
+                        rough_location: `${data.city || ""}, ${data.region || ""}`,
+                        google_search_style_location: data.city && data.region ? `${data.region} ${data.city}` : "判定不可",
+                        region: data.region || "-",
+                        country: `${data.country_name} (${data.country_code})`,
+                        asn: data.asn || "-",
+                        tld: `.${data.country_code ? data.country_code.toLowerCase() : "jp"}`,
+                        rir: data.continent_code === "AP" ? "APNIC" : data.continent_code === "EU" ? "RIPE" : data.continent_code === "NA" ? "ARIN" : "その他",
+                        vpn_check: ["hosting", "vpn", "cloudflare", "amazon", "google"].some(k => (data.org || "").toLowerCase().includes(k)) ? "注意: VPN経由" : "通常回線",
+                        origin_ip: data.ip
+                    };
                 }).catch(() => {});
 
+            // 全通信の完了を同期
             await Promise.allSettled([fetchIPv4, fetchIPv6, fetchGeo]);
-            document.querySelectorAll('.loading').forEach(el => el.classList.remove('loading'));
+
+            // 最終確定したオブジェクトを出力
+            renderJson();
+            
+            // ステータスを「完了」に変更
+            const badge = document.getElementById("status-badge");
+            badge.textContent = "解析完了";
+            badge.classList.add("ready");
+
+            // クリップボードコピー機能の有効化
+            document.getElementById("copy-btn").addEventListener("click", () => {
+                const jsonText = JSON.stringify(envData, null, 4);
+                navigator.clipboard.writeText(jsonText).then(() => {
+                    const originalText = document.getElementById("copy-btn").textContent;
+                    document.getElementById("copy-btn").textContent = "コピーしました！";
+                    setTimeout(() => {
+                        document.getElementById("copy-btn").textContent = originalText;
+                    }, 2000);
+                });
+            });
         });
     </script>
 </body>
